@@ -1,4 +1,4 @@
-# CI/CD-Compatible Dockerfile
+# Dockerfile (CI/CD-Compatible) - General Information
 
 ## General Structure
 These may be modified to fit your needs. However, typical application containers usually need:

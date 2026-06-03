@@ -1,8 +1,7 @@
 # Dockerfile (CI/CD-Compatible) - General Information ℹ️📝
 If you're anything like me, you weren't born with Docker documentation in your hand. Like with anything else, you have to
-learn about it. Unfortunately, many articles on Docker, or other similar development documentation, make too many heavy
-assumptions about prior knowledge, tell you the 'how' without explaining any of the 'why', or don't break down the why in a
-simple way. This repo serves as a place to show you how to containerize your project, explain some
+learn about it. Unfortunately, many articles about Docker (and other similar development documentation) make too many heavy
+assumptions about prior knowledge, tell you the 'how' without explaining any of the 'why', or don't break down the 'why' in an easily digestible way. This repo serves as a place to show you how to containerize your project, explain some
 of the context behind why certain things are necessary or traditionally done, and to refresh your memory for next time, in
 case yours, like mine, isn't photographic.😉
 

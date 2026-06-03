@@ -23,3 +23,5 @@ environments from the final production environment.
 Because many CI pipelines use ephemeral runners, to preserve layer caching between builds, you will 
 need to explicitly export and import your cache using Docker BuildKit, whether in your *.yaml file or 
 manually in a custom script. If your CI provider already manages cache persistence between runs, you may not need additional cache export/import configuration.
+
+Visit this link to learn how to configure a Continuous Integration workflow[https://docs.github.com/en/actions/get-started/quickstart] for your project

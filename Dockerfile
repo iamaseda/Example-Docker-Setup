@@ -89,7 +89,7 @@ USER user_name
 # mappings or `docker run -p 3000:3000`
 EXPOSE 3000
 
-# The image healthcheck will be overridden by a healthcheck defined in compose.yaml. Leave it in the 
+# Any healthcheck defined in compose.yaml will override healthchecks defined in the image. Leave it in the 
 # dockerfile for a reusable image approach. Put it in the compose.yaml or another such corresponding file
 # for an environment-specific approach
 HEALTHCHECK --interval=30s --timeout=5s \

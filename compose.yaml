@@ -1,0 +1,230 @@
+services:
+  # ========================================
+  # Development Service
+  ## Local development runtime
+  ## Run `docker compose --profile dev up`
+  # ========================================
+  custom-dev-name:
+    build:
+      context: .
+      dockerfile: ./path/to/Dockerfile
+      target: development
+
+    # This is what will publish your port(s) after EXPOSE documents them in your dockerfile
+    ports:
+      - '${APP_PORT:-3000}:3000' # API server
+      - '${DEBUG_PORT:-9229}:9229' # debugger
+
+    environment:
+      RUNTIME_ENV: ${RUNTIME_ENV} # This is how to use a variable from your .env as a placeholder
+      DOCKER_ENV: 'true'
+      POSTGRES_HOST: your-db-host
+      POSTGRES_PORT: your-db-port
+      POSTGRES_DB: your-application-db
+      POSTGRES_USER: your-db-user
+      POSTGRES_PASSWORD: '${POSTGRES_PASSWORD:-default_password}'
+      ALLOWED_ORIGINS: '${ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:5173}'
+
+    volumes:
+      # Mounting source code enables live reload during development
+      - ./src:/application/src
+      # Package manager files. You should mount configuration files that maay change
+      - ./package.json:/application/package.json
+      # Optional framework/tool configuration examples:
+      # - ./tool.config.js:/application/tool.config.js:ro
+      # - ./orm.config.ts:/application/orm.config.ts:ro
+
+      # Optional package manager cache volume (such as pnpm, npm, etc). This will persist package manager cache between 
+      # container rebuilds
+      - package-manager-cache:/cache
+
+    depends_on:
+      your-application-db:
+        condition: service_healthy
+
+    restart: unless-stopped
+
+    # This approach requires access to curl in the final production image
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+    networks:
+      - application-network
+    
+    # Profiles allow you to start specific services.
+    # Example:
+    # docker compose --profile dev up
+    # docker compose --profile prod up
+    profiles:
+      - dev
+    
+    # The below is not a real command, but it follows the proper convention: ["your-runtime", "your-application-specific-start-command"]
+    command: application_run_command start:dev
+
+  # ========================================
+  # Production Service
+  ## Production runtime
+  ## Run `docker compose --profile prod up`
+  # ========================================
+  application-prod:
+    build:
+      context: .
+      dockerfile: ./path/to/Dockerfile
+      target: production
+
+    ports:
+      - '${PROD_PORT:-8080}:3000'
+
+    environment:
+      RUNTIME_ENV: production
+      POSTGRES_HOST: your-db-host
+      POSTGRES_PORT: your-db-port
+      POSTGRES_DB: your-application-db
+      POSTGRES_USER: your-db-user\
+      POSTGRES_PASSWORD: '${POSTGRES_PASSWORD:-default_password}'
+      ALLOWED_ORIGINS: '${ALLOWED_ORIGINS:-https://yourdomain.com}'
+
+    depends_on:
+      your-application-db:
+        condition: service_healthy
+
+    restart: unless-stopped
+
+    healthcheck:
+      # Replace with an endpoint that returns HTTP 200 when the application is healthy
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+    security_opt:
+      - no-new-privileges:true
+
+    read_only: true
+
+    tmpfs:
+      - /tmp
+
+    networks:
+      - application-network
+
+    profiles:
+      - prod
+
+  # ========================================
+  # PostgreSQL Database Service (Optional Example)
+  ## PostgreSQL
+  ## Remove if your application doesn't need a database
+  # ========================================
+  your-application-db:
+    image: postgres:18-bookworm
+
+    environment:
+      POSTGRES_DB: '${POSTGRES_DB:-default_db}'
+      POSTGRES_USER: '${POSTGRES_USER:-rater}'
+      POSTGRES_PASSWORD: '${POSTGRES_PASSWORD:-application_password}'
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    ports:
+      - '${DB_PORT:-5432}:5432'
+
+    restart: unless-stopped
+
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-rater} -d ${POSTGRES_DB:-default_db}']
+      start_period: 20s
+      retries: 5
+      interval: 10s
+      timeout: 5s
+
+    networks:
+      - application-network
+
+  # =======================================
+  # Database Schema Migration Service
+  ## Use `docker compose --profile migrate run --rm migrate-db` OR `docker compose run --rm migrate-db`
+  ## Then `docker compose --profile dev up`
+  # =======================================
+  migrate-db:
+    build:
+      context: .
+      dockerfile: ./path/to/Dockerfile
+      target: migrate
+
+    # The below is not a real command, but it follows the proper convention: ["your-runtime", "your-application-specific-start-command"]
+    command:  application_run_command migrate-db
+
+    environment:
+      POSTGRES_HOST: your-application-db
+      POSTGRES_PORT: 5432 # Match to your database's port if it's different. This is the default PostgreSQL port
+      POSTGRES_DB: default_db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-default_password}
+
+    depends_on:
+      your-application-db:
+        condition: service_healthy
+
+    volumes:
+      - ./src:/application/src
+      - ./package.json:/application/package.json
+
+      # Optional migration or ORM configuration
+      # - ./orm.config.ts:/application/orm.config.ts
+
+    networks:
+      - application-network
+
+    profiles:
+      - migrate
+
+  # =======================================
+  # Adminer: Database UI Provider
+  ## DB inspection
+  ## Optional database administration UI example
+  # =======================================
+  adminer:
+    image: adminer
+
+    ports:
+      - 8081:8080
+
+    # Remove the depends_on section if your application doesn't depend on a database
+    depends_on:
+      your-application-db:
+        condition: service_healthy
+
+    restart: unless-stopped
+
+    networks:
+      - application-network
+
+    profiles:
+      - dev
+
+# ========================================
+# Volume Configuration
+# ========================================
+volumes:
+  postgres_data:
+    name: application-postgres-data # This explicit naming is optional
+    driver: local
+
+  package-manager-cache:
+    driver: local
+
+# ========================================
+# Network Configuration
+## Services on the same Docker network can communicate using service names
+# ========================================
+networks:
+  application-network:
+    name: application-network
+    driver: bridge

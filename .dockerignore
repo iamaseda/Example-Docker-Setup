@@ -1,0 +1,36 @@
+# Version control
+.git
+.github
+.gitignore
+
+# Dependency directories (if dependencies are installed in the container)
+dependencies/
+# For example, node
+node_modules/
+
+# Build outputs during development (if generated inside the container)
+build/
+dist/
+
+# Environment files
+.env*
+
+# Development files (logs/caches)
+.vscode/
+*.log
+coverage/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Documentation
+docs/
+
+# Deployment configs (optional)
+# compose.yaml
+Taskfile.yml
+
+# Optional tool/framework configuration files
+# Exclude only if they are not required for your build
+# !tool.config.ext
